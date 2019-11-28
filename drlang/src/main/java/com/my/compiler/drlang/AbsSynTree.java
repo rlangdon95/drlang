@@ -1,6 +1,8 @@
 package com.my.compiler.drlang;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 public class AbsSynTree extends Tree {
 
@@ -80,7 +82,8 @@ public class AbsSynTree extends Tree {
 				queue.add(x);
 
 
-			System.out.println(queue.peek().getData());
+			if (level < 0 || level == queue.peek().getLevel())
+				System.out.println(queue.peek().getData());
 			queue.poll();
 		}
 	}
