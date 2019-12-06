@@ -6,7 +6,7 @@ import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-
+import java.util.Stack;
 import java.util.regex.Pattern;
 
 /**
@@ -14,6 +14,104 @@ import java.util.regex.Pattern;
  *
  */
 public class Main {
+
+	public static AbsSynTree parser(List<Token> token_list, String filename) {
+
+		// flag to denote if we are currently inside a function
+		boolean function_flag = false;
+
+		// flag to denote if we are currently processing a statement
+		boolean statement_flag = false;
+
+		// return kind of the next function
+		FunctionReturnKind return_kind = FunctionReturnKind.VOID;
+
+		// stack for checking balanced curly braces
+		Stack<Boolean> curly_braces_stack = new Stack<Boolean>();
+
+		AbsSynTree tree = new AbsSynTree();
+		Node<Program> root = new Node<Program>(new Program(filename), NodeKind.PROGRAM);
+		tree.add(root, null);
+		Node parent = root;
+
+		for (Token x : token_list) {
+
+			switch (x.getKind()) {
+
+				case INT:
+				{
+					if (!function_flag) {
+						
+						return_kind = FunctionReturnKind.INT;
+						function_flag = true;
+					}
+
+					else {
+
+						System.err.print("Line " + x.getLineNumber() + ", column " + x.getOffset() + ": ");
+						System.err.println("Multiple return types for function " + x.getName() + ".");
+						System.exit(255);
+					}
+				}
+				break;
+
+				case IDENTIFIER_FUNCTION:
+				{
+					function_flag = true;
+					Function fun = new Function(x.getName(), x.getId(), return_kind);
+					Node<Function> node = new Node<Function>(fun, NodeKind.FUNCTION);
+					tree.add(node, parent);
+					parent = node;
+					statement_flag = true;
+				}
+				break;
+
+				case OPEN_CURLY:
+				curly_braces_stack.push(true);
+				break;
+
+				case CLOSE_CURLY:
+				if (curly_braces_stack == null || curly_braces_stack.isEmpty()) {
+					
+					System.err.println("Unmatched curly braces at line " + x.getLineNumber() + ", column " + x.getOffset() + ".");
+					System.exit(255);
+				}
+				curly_braces_stack.pop();
+				break;
+
+				case RETURN:
+				{
+					Node<Keyword> node = new Node<Keyword>(new Keyword("ret", TokenKind.RETURN), NodeKind.RETURN);
+					tree.add(node, parent);
+					parent = node;
+				}
+				break;
+
+				case LITERAL_INT:
+				{
+					Node<Integer> node = new Node<Integer>(Integer.parseInt(x.getName()), NodeKind.LITERAL);
+					tree.add(node, parent);
+					parent = node;
+				}
+				break;
+
+				case SEMICOLON:
+				{
+					Node<String> node = new Node<String>(";", NodeKind.SEMICOLON);
+					tree.add(node, parent);
+					parent = node;
+					statement_flag = false;
+				}
+				break;
+
+				default:
+				System.err.println("Unidenfied token kind at line " + x.getName() + ", column " + x.getOffset() + ".");
+				System.exit(255);
+			}
+		}
+
+		return tree;
+	}
 
 	public static TokenKind getTokenKind(String token, int line_number, int offset) {
 
@@ -93,7 +191,7 @@ public class Main {
 
 					if (buffer.length() > 0) {
 						
-						token_list.add(makeToken(buffer.toString(), token_id, line_number, offset));
+						token_list.add(makeToken(buffer.toString(), token_id, line_number, offset - 1));
 						buffer = new StringBuilder("");
 						if (current == ';') {
 
@@ -134,7 +232,7 @@ public class Main {
 		}
 
 		if (buffer.length() > 0)
-			token_list.add(makeToken(buffer.toString(), token_id, line_number, offset));
+			token_list.add(makeToken(buffer.toString(), token_id, line_number, offset - 1));
 
 		return token_list;
 
@@ -175,13 +273,13 @@ public class Main {
     	// System.out.println("Output: " + p.matcher("main()").matches());
 
         // Lexical Analysis
-    	List<Token> token_list = lexer("C:/Users/am250135/personal/drlang/drlang/src/test/java/com/my/compiler/drlang/input/test1.drl");
+        String filename = "C:/Users/am250135/personal/drlang/drlang/src/test/java/com/my/compiler/drlang/input/test1.drl";
+    	List<Token> token_list = lexer(filename);
     	for (Token x : token_list)
-    		System.out.println(x.getKind() + "\t" + x.getName());
+    		System.out.println(x.getKind() + "\t" + x.getName() + ", " + x.getLineNumber() + ", " + x.getOffset());
 
-        // Syntax Analysis
-
-        // Semantic Analysis
+        // Parsing
+        // AbsSynTree ast = parser(token_list, String filename);
 
         // Intermediate Code Generation
 

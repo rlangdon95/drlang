@@ -15,6 +15,37 @@ public class AbsSynTree extends Tree {
 
 	public Node<?> getRoot() { return root; }
 
+	// traverse the tree in a level order and when the parent is found, add node as child and return true
+	// return false, otherwise
+	public boolean add(Node<?> node, Node<?> parent) {
+
+		if (this.root == null || parent == null) {
+
+			this.root = node;
+			return true;
+		}
+
+		Queue<Node<?>> queue = new LinkedList<Node<?>>();
+		queue.add(this.root);
+
+		while (!queue.isEmpty()) {
+
+			List<Node<?>> children = node.getChildren();
+			for (Node<?> x : children)
+				queue.add(x);
+
+			if (parent.equals(queue.peek())) {
+				
+				parent.addChild(node);
+				return true;
+			}
+
+			queue.poll();
+		}
+
+		return false;
+	}
+
 	public void inorder() { inorder(this.root); }
 
 	public void preorder() { preorder(this.root, 0L); }
@@ -71,35 +102,9 @@ public class AbsSynTree extends Tree {
 			for (Node<?> x : children)
 				queue.add(x);
 
-
 			if (level < 0 || level == queue.peek().getLevel())
 				System.out.println(queue.peek().getData());
 			queue.poll();
 		}
-	}
-
-	@SuppressWarnings("unchecked")
-	public static AbsSynTree createSynTree(Token ... token) {
-
-		AbsSynTree tree = new AbsSynTree();
-		Node<Token> last_inserted = null;
-		for (Token x : token) {
-
-			if (tree.getRoot() == null) {
-
-				Node<Token> root = new Node<Token>(x);
-				tree.root = root;
-				last_inserted = root;
-			}
-
-			else {
-
-				Node<Token> node = new Node<Token>(x);
-				last_inserted.addChild(node);
-				last_inserted = (Node<Token>)last_inserted.getNextChild();
-			}
-		}
-
-		return tree;
 	}
 }

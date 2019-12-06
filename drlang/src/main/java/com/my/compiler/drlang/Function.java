@@ -6,13 +6,18 @@ public class Function {
 
 	private int id;
 
-	public Function(String name, int id) {
+	private FunctionReturnKind kind;
+
+	public Function(String name, int id, FunctionReturnKind kind) {
 
 		this.name = name;
 		this.id = id;
+		this.kind = kind;
 	}
 
 	public String getName() { return this.name; }
 
 	public int getId() { return this.id; }
+
+	public FunctionReturnKind getKind() { return this.kind; }
 }

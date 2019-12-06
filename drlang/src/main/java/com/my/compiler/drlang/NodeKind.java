@@ -2,7 +2,9 @@ package com.my.compiler.drlang;
 
 public enum NodeKind {
 
-	STATEMENT,
+	// Program level kinds
+	PROGRAM,
+	FUNCTION,
 
 	// Binary Arithmetic Operators
 	PLUS_OP,
@@ -25,5 +27,12 @@ public enum NodeKind {
 	// Assignment Operator
 	ASSIGN_OP,
 
-	RETURN
+	// Function return
+	RETURN,
+
+	// Constant literals
+	LITERAL,
+
+	// Separators
+	SEMICOLON
 }
