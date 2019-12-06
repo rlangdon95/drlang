@@ -1,0 +1,15 @@
+package com.my.compiler.drlang;
+
+public enum TokenKind {
+
+	INT,
+	OPEN_PARENTHESIS,
+	CLOSE_PARENTHESIS,
+	OPEN_CURLY,
+	CLOSE_CURLY,
+	SEMICOLON,
+	RETURN,
+	IDENTIFIER,
+	IDENTIFIER_FUNCTION,
+	LITERAL_INT
+}

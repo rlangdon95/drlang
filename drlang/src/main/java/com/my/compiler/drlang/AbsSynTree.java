@@ -6,41 +6,30 @@ import java.util.Queue;
 
 public class AbsSynTree extends Tree {
 
-	private Node root;
+	private Node<?> root;
 
 	public AbsSynTree() {
 
-		
+		root = null;
 	}
 
-	public void inorder() {
+	public Node<?> getRoot() { return root; }
 
-		inorder(this.root);
-	}
+	public void inorder() { inorder(this.root); }
 
-	public void preorder() {
+	public void preorder() { preorder(this.root, 0L); }
 
-		preorder(this.root, 0L);
-	}
+	public void postorder() { postorder(this.root, 0L); }
 
-	public void postorder() {
+	public void levelorder() { levelorder(this.root, -1L); }
 
-		postorder(this.root, 0L);
-	}
-
-	public void levelorder() {
-
-		levelorder(this.root, -1L);
-	}
-
-	private void inorder(Node node) {
+	private void inorder(Node<?> node) {
 
 		if (node == null)
 			return;
-
 	}
 
-	private void preorder(Node node, long indent) {
+	private void preorder(Node<?> node, long indent) {
 
 		if (node == null)
 			return;
@@ -50,18 +39,18 @@ public class AbsSynTree extends Tree {
 		System.out.print(node.getData());
 		System.out.print("\n");
 
-		List<Node> children = node.getChildren();
-		for (Node x : children)
+		List<Node<?>> children = node.getChildren();
+		for (Node<?> x : children)
 			preorder(x, indent + 1);
 	}
 
-	private void postorder(Node node, long indent) {
+	private void postorder(Node<?> node, long indent) {
 
 		if (node == null)
 			return;
 
-		List<Node> children = node.getChildren();
-		for (Node x : children)
+		List<Node<?>> children = node.getChildren();
+		for (Node<?> x : children)
 			preorder(x, indent + 1);
 		
 		System.out.print((indent + 1) + ":");
@@ -70,15 +59,16 @@ public class AbsSynTree extends Tree {
 		System.out.print("\n");
 	}
 
-	private void levelorder(Node node, long level) {
+	@SuppressWarnings("rawtypes")
+	private void levelorder(Node<?> node, long level) {
 
 		Queue<Node> queue = new LinkedList<Node>();
 		queue.add(node);
 
 		while (!queue.isEmpty()) {
 
-			List<Node> children = node.getChildren();
-			for (Node x : children)
+			List<Node<?>> children = node.getChildren();
+			for (Node<?> x : children)
 				queue.add(x);
 
 
@@ -86,5 +76,30 @@ public class AbsSynTree extends Tree {
 				System.out.println(queue.peek().getData());
 			queue.poll();
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static AbsSynTree createSynTree(Token ... token) {
+
+		AbsSynTree tree = new AbsSynTree();
+		Node<Token> last_inserted = null;
+		for (Token x : token) {
+
+			if (tree.getRoot() == null) {
+
+				Node<Token> root = new Node<Token>(x);
+				tree.root = root;
+				last_inserted = root;
+			}
+
+			else {
+
+				Node<Token> node = new Node<Token>(x);
+				last_inserted.addChild(node);
+				last_inserted = (Node<Token>)last_inserted.getNextChild();
+			}
+		}
+
+		return tree;
 	}
 }

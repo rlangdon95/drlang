@@ -23,5 +23,7 @@ public enum NodeKind {
 	NOTEQUALS_OP,
 
 	// Assignment Operator
-	ASSIGN_OP
+	ASSIGN_OP,
+
+	RETURN
 }
