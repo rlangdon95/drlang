@@ -35,8 +35,7 @@ public class Main {
 		Node parent = root;
 
 		for (Token x : token_list) {
-
-			System.out.println("HELLO: " + parent.getData() + " " + parent.getKind());
+			
 			switch (x.getKind()) {
 
 				case INT:
@@ -83,7 +82,12 @@ public class Main {
 				case RETURN:
 				{
 					Node<Keyword> node = new Node<Keyword>(new Keyword("ret", TokenKind.RETURN), NodeKind.RETURN);
-					tree.add(node, parent);
+					boolean node_added = tree.add(node, parent);
+					if (!node_added) {
+						
+						System.err.println("Parser error encountered...!!!");
+						System.exit(255);
+					}
 					parent = node;
 				}
 				break;
@@ -236,29 +240,6 @@ public class Main {
 			token_list.add(makeToken(buffer.toString(), token_id, line_number, offset - 1));
 
 		return token_list;
-
-		/* try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-			
-			String line = br.readLine();
-			char ch = 
-			int line_number = 1;
-			while (line != null) {
-
-				int offset = line.length();
-				line = line.trim();
-				offset = offset - line.length();
-				if (line.length() != 0)
-					tokenizer(line, line_number, offset);
-
-				line = br.readLine();
-				++line_number;
-			}
-		}
-		
-		catch (IOException e) {
-
-			e.printStackTrace();
-		}*/
 	}
 
 	public static void init() {}
@@ -274,14 +255,19 @@ public class Main {
     	// System.out.println("Output: " + p.matcher("main()").matches());
 
         // Lexical Analysis
-        String filename = "C:/Users/am250135/personal/drlang/drlang/src/test/java/com/my/compiler/drlang/input/test1.drl";
+    	System.out.println("Starting Lexical Analysis...");
+        // String filename = "C:/Users/am250135/personal/drlang/drlang/src/test/java/com/my/compiler/drlang/input/test1.drl";
+        String filename = "C:\\Users\\AMARTYA MAJUMDAR\\Documents\\Github\\drlang\\drlang\\src\\test\\java\\com\\my\\compiler\\drlang\\input\\test1.drl";
     	List<Token> token_list = lexer(filename);
     	for (Token x : token_list)
     		System.out.println(x.getKind() + "\t" + x.getName() + ", " + x.getLineNumber() + ", " + x.getOffset());
-
+    	System.out.println("Lexical analysis complete...!!!");
+    	
         // Parsing
+    	System.out.println("\nStarting Parser...");
         AbsSynTree ast = parser(token_list, filename);
         ast.preorder();
+        System.out.println("Parsing complete...!!!");
 
         // Intermediate Code Generation
 

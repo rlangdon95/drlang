@@ -43,8 +43,8 @@ public class Node<T> {
 
 	public void setParent(Node<?> parent) { this.parent = parent; this.level = parent.getLevel(); }
 
-	public boolean equals(Node<?> node) { return (this.data.equals(node.getData()) &&
-												 (this.kind == node.getKind())); }
+	@Override
+	public boolean equals(Object node) { return (this.hashCode() == (node.hashCode())); }
 
 	public void addChild(Node<?> node) {
 
