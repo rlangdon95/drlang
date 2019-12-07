@@ -36,6 +36,7 @@ public class Main {
 
 		for (Token x : token_list) {
 
+			System.out.println("HELLO: " + parent.getData() + " " + parent.getKind());
 			switch (x.getKind()) {
 
 				case INT:
@@ -279,7 +280,8 @@ public class Main {
     		System.out.println(x.getKind() + "\t" + x.getName() + ", " + x.getLineNumber() + ", " + x.getOffset());
 
         // Parsing
-        // AbsSynTree ast = parser(token_list, String filename);
+        AbsSynTree ast = parser(token_list, filename);
+        ast.preorder();
 
         // Intermediate Code Generation
 

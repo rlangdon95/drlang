@@ -25,7 +25,7 @@ public class AbsSynTree extends Tree {
 			return true;
 		}
 
-		Queue<Node<?>> queue = new LinkedList<Node<?>>();
+		Queue<Node> queue = new LinkedList<Node>();
 		queue.add(this.root);
 
 		while (!queue.isEmpty()) {
@@ -34,8 +34,9 @@ public class AbsSynTree extends Tree {
 			for (Node<?> x : children)
 				queue.add(x);
 
+			System.out.println(parent.toString() + " " + queue.peek().toString());
 			if (parent.equals(queue.peek())) {
-				
+		
 				parent.addChild(node);
 				return true;
 			}
@@ -67,7 +68,7 @@ public class AbsSynTree extends Tree {
 
 		System.out.print((indent + 1) + ":");
 		for (int i = 0; i < indent; ++i) System.out.print(" ");
-		System.out.print(node.getData());
+		System.out.print(node.getKind());
 		System.out.print("\n");
 
 		List<Node<?>> children = node.getChildren();
