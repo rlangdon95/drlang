@@ -24,6 +24,9 @@ public enum NodeKind {
 	EQUALS_OP,
 	NOTEQUALS_OP,
 
+	// Expressions
+	EXPRESSION,
+
 	// Assignment Operator
 	ASSIGN_OP,
 

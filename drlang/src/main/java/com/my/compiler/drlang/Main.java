@@ -1,8 +1,10 @@
 package com.my.compiler.drlang;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -10,10 +12,144 @@ import java.util.Stack;
 import java.util.regex.Pattern;
 
 /**
- * Hello world!
+ * Project:     DRLang, an attempt at a new compiler
+ * Description: The compiler is written in Java, which aims at
+ *              reading code in DRL and generates equivalent
+ *              Assembly code.
+ * Author:      Amartya Majumdar
+ * Contact:     a.majumdar1041@gmail.com
+ * Resources:   Writing a C compiler by Nora Sandler
  *
  */
 public class Main {
+
+	public static void evaluateAndReplaceNode(Node<?> node, Node<?> root) {
+
+		switch (node.getKind()) {
+
+			case EXPRESSION:
+			{
+
+			}
+			break;
+
+			case FUNCTION:
+			{
+
+			}
+			break;
+
+			default:
+			{
+				System.err.println("Unexpected Node Kind. Exiting.");
+				System.exit(255);
+			}
+		}
+	}
+
+	public static void generate(Node<?> node, Node<?> root, List<String> lines) {
+
+		switch (node.getKind()) {
+
+			case PROGRAM:
+			{
+				System.err.println("Unexpected Parse Tree. Exiting.");
+				System.exit(255);
+			}
+			break;
+
+			case FUNCTION:
+			{
+				String function_name = ((Function) node.getData()).getName();
+				StringBuilder line = new StringBuilder("\t.globl _");
+				line.append(function_name);
+				lines.add(line.toString());
+
+				line = new StringBuilder("_");
+				line.append(function_name);
+				lines.add(line.toString());
+				for (Node<?> x : (List<Node<?>>)node.getChildren())
+					generate(x, root, lines);
+			}
+			break;
+
+			case RETURN:
+			{
+				// Error if return has more than one child
+				if (node.getChildren().size() > 1) {
+
+					System.err.println("Unexpected error. Multiple returns. Exiting.");
+					System.exit(255);
+				}
+
+				String data = node.getData().toString();
+				StringBuilder line = new StringBuilder("\t");
+				line.append(Constants.MOVEL);
+				line.append("\t");
+				line.append("$");
+
+				// if the child is of kind LITERAL, no need for evaluation
+				// TODO: if the child is of kind EXPRESSION, evaluate the expression
+				//       and replace the child with a LITERAL kind node having the evaluated data
+				if (node.getChildren().get(0).getKind() == NodeKind.EXPRESSION)
+					evaluateAndReplaceNode(node, root);
+
+				// TODO: if the return statement returns the value returned by another function
+				else if (node.getChildren().get(0).getKind() == NodeKind.FUNCTION)
+					evaluateAndReplaceNode(node, root);
+
+				else {
+
+					System.err.println("Unexpected Node Kind. Exiting.");
+					System.exit(255);
+				}
+
+				// append the evaluated value to assembly code
+				line.append(node.getChildren().get(0).getData().toString());
+				line.append(", ");
+				line.append(Constants.EAX);
+				lines.add(line.toString());
+
+				line = new StringBuilder("\t");
+				line.append(Constants.RET);
+				lines.add(line.toString());
+			}
+			break;
+
+			case SEMICOLON:
+			{
+				lines.add(Constants.LINEFEED);
+			}
+			break;
+		}
+	}
+
+	public static void generate(AbsSynTree ast, String filename) {
+
+		File file = new File(filename);
+		List<String> lines = new ArrayList<String>();
+		
+		try (OutputStream os = new FileOutputStream(file, true)) {
+	
+			Node<?> root = ast.getRoot();
+			for (Node<?> x : root.getChildren()) {
+
+				if (((Function) x.getData()).getName().equals("main")) {
+
+					generate(x, root, lines);
+					break;
+				}
+			}
+
+			for (String x : lines)
+				os.write(x.getBytes(), 0, x.length());
+		}
+
+		catch (IOException ioe) {
+
+			ioe.printStackTrace();
+		}
+	}
 
 	public static AbsSynTree parser(List<Token> token_list, String filename) {
 
@@ -32,7 +168,7 @@ public class Main {
 		AbsSynTree tree = new AbsSynTree();
 		Node<Program> root = new Node<Program>(new Program(filename), NodeKind.PROGRAM);
 		tree.add(root, null);
-		Node parent = root;
+		Node<?> parent = root;
 
 		for (Token x : token_list) {
 
@@ -288,5 +424,7 @@ public class Main {
         // Optimization : This has very low priority for now
 
         // Code generation : Currently, convert DRLang code to Assembly
+        String output_filepath = "C:/Users/am250135/personal/drlang/drlang/src/test/java/com/my/compiler/drlang/output/test1.asm";
+        generate(ast, output_filepath);
     }
 }

@@ -2,6 +2,24 @@ package com.my.compiler.drlang;
 
 public class Constants {
 
+	/* ASSEMBLY KEYWORDS */
+	// movl moves a long (32-bits) from source to destination
+	public static final String MOVEL = "movl";
+
+	// movl moves a long (32-bits) from source to destination
+	public static final String MOVEQ = "movq";
+
+	// return from procedure
+	public static final String RET = "ret";
+	/* ASSEMBLY KEYWORDS */
+
+	/* ASSEMBLY REGISTERS */
+	// Extended Accumulator Register
+	public static final String EAX = "eax";
+	/* ASSEMBLY REGISTERS */
+
+	public static final String LINEFEED = "\n";
+
 	public static final TokenPattern INT = new TokenPattern("int", TokenKind.INT);
 
 	public static final TokenPattern OPEN_PARENTHESIS = new TokenPattern("\\(", TokenKind.OPEN_PARENTHESIS);
