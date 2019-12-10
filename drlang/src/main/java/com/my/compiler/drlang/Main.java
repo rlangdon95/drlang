@@ -48,6 +48,8 @@ public class Main {
 	}
 
 	public static void generate(Node<?> node, Node<?> root, List<String> lines) {
+		
+		System.out.println("Generate: " + node.getKind());
 
 		switch (node.getKind()) {
 
@@ -68,6 +70,7 @@ public class Main {
 				line = new StringBuilder("_");
 				line.append(function_name);
 				lines.add(line.toString());
+				System.out.println(line.toString());
 				for (Node<?> x : (List<Node<?>>)node.getChildren())
 					generate(x, root, lines);
 			}
@@ -98,11 +101,11 @@ public class Main {
 				else if (node.getChildren().get(0).getKind() == NodeKind.FUNCTION)
 					evaluateAndReplaceNode(node, root);
 
-				else {
+				/*else {
 
 					System.err.println("Unexpected Node Kind. Exiting.");
 					System.exit(255);
-				}
+				}*/
 
 				// append the evaluated value to assembly code
 				line.append(node.getChildren().get(0).getData().toString());
@@ -113,6 +116,7 @@ public class Main {
 				line = new StringBuilder("\t");
 				line.append(Constants.RET);
 				lines.add(line.toString());
+				System.out.println(line.toString());
 			}
 			break;
 
@@ -127,6 +131,9 @@ public class Main {
 	public static void generate(AbsSynTree ast, String filename) {
 
 		File file = new File(filename);
+		if (file.exists())
+			file.delete();
+
 		List<String> lines = new ArrayList<String>();
 		
 		try (OutputStream os = new FileOutputStream(file, true)) {
@@ -134,21 +141,26 @@ public class Main {
 			Node<?> root = ast.getRoot();
 			for (Node<?> x : root.getChildren()) {
 
-				if (((Function) x.getData()).getName().equals("main")) {
+				if (((Function) x.getData()).getName().equals("main()")) {
 
 					generate(x, root, lines);
 					break;
 				}
 			}
 
-			for (String x : lines)
+			for (String x : lines) {
+
 				os.write(x.getBytes(), 0, x.length());
+				os.write(Constants.LINEFEED.getBytes(), 0, Constants.LINEFEED.length());
+			}
 		}
 
 		catch (IOException ioe) {
 
 			ioe.printStackTrace();
 		}
+
+		System.out.println("\n\n" + lines.size());
 	}
 
 	public static AbsSynTree parser(List<Token> token_list, String filename) {
@@ -382,35 +394,32 @@ public class Main {
 
     public static void main(String[] args) {
         
-        // if (args.length != 1)
-        	// System.out.println("Incorrect Usage!");
-
     	init();
-
-    	// Pattern p = Pattern.compile("([a-zA-Z][a-zA-Z0-9_$]*\\(\\))");
-    	// System.out.println("Output: " + p.matcher("main()").matches());
+    	System.out.println("Working Directory = " +
+              System.getProperty("user.dir"));
 
         // Lexical Analysis
     	System.out.println("Starting Lexical Analysis...");
-        // String filename = "C:/Users/am250135/personal/drlang/drlang/src/test/java/com/my/compiler/drlang/input/test1.drl";
-        String filename = "C:\\Users\\AMARTYA MAJUMDAR\\Documents\\Github\\drlang\\drlang\\src\\test\\java\\com\\my\\compiler\\drlang\\input\\test1.drl";
+        String filename = ".\\src\\test\\java\\com\\my\\compiler\\drlang\\input\\test1.drl";
     	List<Token> token_list = lexer(filename);
     	for (Token x : token_list)
     		System.out.println(x.getKind() + "\t" + x.getName() + ", " + x.getLineNumber() + ", " + x.getOffset());
-    	System.out.println("Lexical analysis complete...!!!");
+    	System.out.println("Lexical analysis complete...!!!\n");
     	
         // Parsing
-    	System.out.println("\nStarting Parser...");
+    	System.out.println("Starting Parser...");
         AbsSynTree ast = parser(token_list, filename);
         ast.preorder();
-        System.out.println("Parsing complete...!!!");
+        System.out.println("Parsing complete...!!!\n");
 
         // Intermediate Code Generation
 
         // Optimization : This has very low priority for now
 
-        // Code generation : Currently, convert DRLang code to Assembly
-        String output_filepath = "C:/Users/am250135/personal/drlang/drlang/src/test/java/com/my/compiler/drlang/output/test1.asm";
+        // Code generation : Converting DRLang code to Assembly
+        System.out.println("Generating Assembly Code...");
+        String output_filepath = ".\\src\\test\\java\\com\\my\\compiler\\drlang\\output\\test1.s";
         generate(ast, output_filepath);
+        System.out.println("Assembly generated!!!\n");
     }
 }
