@@ -110,6 +110,7 @@ public class Main {
 				// append the evaluated value to assembly code
 				line.append(node.getChildren().get(0).getData().toString());
 				line.append(", ");
+				line.append("%");
 				line.append(Constants.EAX);
 				lines.add(line.toString());
 
