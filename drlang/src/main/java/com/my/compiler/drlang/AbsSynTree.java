@@ -22,6 +22,7 @@ public class AbsSynTree extends Tree {
 		if (this.root == null || parent == null) {
 
 			this.root = node;
+			node.setLevel(0);
 			return true;
 		}
 
@@ -33,6 +34,13 @@ public class AbsSynTree extends Tree {
 			List<Node<?>> children = queue.peek().getChildren();
 			for (Node<?> x : children)
 				queue.add(x);
+
+			if (parent.getKind() == NodeKind.RETURN &&
+				  node.getKind() == NodeKind.EXPRESSION) {
+
+				if (queue.peek() != null)
+					System.out.println(queue.peek().getKind());
+			}
 
 			if (parent.equals(queue.peek())) {
 		

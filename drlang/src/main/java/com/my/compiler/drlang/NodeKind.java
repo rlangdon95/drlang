@@ -2,15 +2,23 @@ package com.my.compiler.drlang;
 
 public enum NodeKind {
 
+	// default or no kind
+	NOKIND,
+
 	// Program level kinds
 	PROGRAM,
 	FUNCTION,
+
+	// Brackets
+	LEFT_PARENTHESIS,
+	RIGHT_PARENTHESIS,
 
 	// Binary Arithmetic Operators
 	PLUS_OP,
 	MINUS_OP,
 	MULTIPLY_OP,
 	DIVISION_OP,
+	EXPONENT_OP,
 
 	// Unary Operators
 	NOT_OP,

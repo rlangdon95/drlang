@@ -9,6 +9,9 @@ public class Node<T> {
 
 	private int level;
 
+	// index location of the node in the parent's list of children
+	private int index;
+
 	private List<Node<?>> children;
 
 	private Node<?> parent;
@@ -21,6 +24,7 @@ public class Node<T> {
 
 		this.data = data;
 		this.level = -1;
+		this.index = 0;
 		this.children = new ArrayList<Node<?>>();
 		this.parent = null;
 		this.next_child = null;
@@ -30,6 +34,8 @@ public class Node<T> {
 	public T getData() { return this.data; }
 
 	public int getLevel() { return this.level; }
+
+	public int getIndex() { return this.index; }
 
 	public List<Node<?>> getChildren() { return this.children; }
 
@@ -41,6 +47,8 @@ public class Node<T> {
 
 	public void setLevel(int level) { this.level = level; }
 
+	public void setIndex(int index) { this.index = index; } 
+
 	public void setParent(Node<?> parent) { this.parent = parent; this.level = parent.getLevel(); }
 
 	@Override
@@ -48,10 +56,30 @@ public class Node<T> {
 
 	public void addChild(Node<?> node) {
 
+		node.setParent(this);
+		node.setLevel(this.level + 1);
+		node.setIndex(this.children.size());
+
 		this.children.add(node);
 		if (this.next_child == null)
 			this.next_child = node;
 	}
 
 	public Node<?> getNextChild() { return this.next_child; }
+
+	public void preorder() { preorder(this, 0); }
+
+	private void preorder(Node<?> root, int indent) {
+
+		if (root == null)
+			return;
+
+		for (int i = 0; i < indent; ++i) System.out.print(" ");
+		System.out.print(root.getKind() + ": " + root.getData());
+		System.out.print("\n");
+
+		List<Node<?>> children = root.getChildren();
+		for (Node<?> x : children)
+			preorder(x, indent + 1);
+	}
 }

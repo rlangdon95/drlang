@@ -13,6 +13,9 @@ public class Constants {
 
 	// return from procedure
 	public static final String RET = "ret";
+
+	// negate the value in a register
+	public static final String NEG = "neg";
 	/* ********************************************************************************************************** */
 	/* ASSEMBLY KEYWORDS */
 	/* ********************************************************************************************************** */
@@ -44,6 +47,7 @@ public class Constants {
 	/* ********************************************************************************************************** */
 	/* Token patterns */
 	/* ********************************************************************************************************** */
+	// TODO: Refactor these
 	public static final TokenPattern INT = new TokenPattern("int", TokenKind.INT);
 
 	public static final TokenPattern OPEN_PARENTHESIS = new TokenPattern("\\(", TokenKind.OPEN_PARENTHESIS);
@@ -64,6 +68,18 @@ public class Constants {
 
 	public static final TokenPattern LITERAL_INT = new TokenPattern("[0-9]+", TokenKind.LITERAL_INT);
 
+	// Arithmetic expressions
+	public static final TokenPattern EXPRESSION = new TokenPattern("\\(*[0-9]+\\)*", TokenKind.EXPRESSION);
+	// Arithmetic expressions
+
+	// Unary Operators
+	public static final TokenPattern NEGATION = new TokenPattern("-", TokenKind.NEGATION);
+
+	public static final TokenPattern COMPLEMENT = new TokenPattern("~", TokenKind.COMPLEMENT);
+
+	public static final TokenPattern LOGICAL_NEGATION = new TokenPattern("!", TokenKind.LOGICAL_NEGATION);
+	// Unary Operators
+
 	public static final TokenPattern KEYWORDS[] = {	INT,
 													OPEN_PARENTHESIS,
 													CLOSE_PARENTHESIS,
@@ -73,7 +89,11 @@ public class Constants {
 													RETURN,
 													IDENTIFIER,
 													IDENTIFIER_FUNCTION,
-													LITERAL_INT
+													LITERAL_INT,
+													EXPRESSION,
+													NEGATION,
+													COMPLEMENT,
+													LOGICAL_NEGATION
 												  };
 	/* ********************************************************************************************************** */
 	/* Token patterns */

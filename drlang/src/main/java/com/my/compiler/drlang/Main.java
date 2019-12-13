@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
@@ -49,8 +48,6 @@ public class Main {
 
 	public static void generate(Node<?> node, Node<?> root, List<String> lines) {
 		
-		System.out.println("Generate: " + node.getKind());
-
 		switch (node.getKind()) {
 
 			case PROGRAM:
@@ -70,7 +67,6 @@ public class Main {
 				line = new StringBuilder("_");
 				line.append(function_name);
 				lines.add(line.toString());
-				System.out.println(line.toString());
 				for (Node<?> x : (List<Node<?>>)node.getChildren())
 					generate(x, root, lines);
 			}
@@ -78,6 +74,14 @@ public class Main {
 
 			case RETURN:
 			{
+				// Error if return type is not void
+				if (node.getChildren().size() == 0) {
+					
+					// Add this condition when function return kind VOID is added 
+					// if (getKind() != FunctionReturnKind.VOID)
+					System.err.println("Function return type is not VOID.");
+					System.exit(255);
+				}
 				// Error if return has more than one child
 				if (node.getChildren().size() > 1) {
 
@@ -85,7 +89,6 @@ public class Main {
 					System.exit(255);
 				}
 
-				String data = node.getData().toString();
 				StringBuilder line = new StringBuilder("\t");
 				line.append(Constants.MOVEL);
 				line.append("\t");
@@ -117,7 +120,6 @@ public class Main {
 				line = new StringBuilder("\t");
 				line.append(Constants.RET);
 				lines.add(line.toString());
-				System.out.println(line.toString());
 			}
 			break;
 
@@ -125,6 +127,10 @@ public class Main {
 			{
 				lines.add(Constants.LINEFEED);
 			}
+			break;
+		default:
+			System.err.println("Bad Node Kind. Exiting.");
+			System.exit(255);
 			break;
 		}
 	}
@@ -158,10 +164,10 @@ public class Main {
 
 		catch (IOException ioe) {
 
+			System.err.println("Error in generating assembly file. Exiting.");
 			ioe.printStackTrace();
+			System.exit(255);
 		}
-
-		System.out.println("\n\n" + lines.size());
 	}
 
 	public static AbsSynTree parser(List<Token> token_list, String filename) {
@@ -211,7 +217,6 @@ public class Main {
 					Node<Function> node = new Node<Function>(fun, NodeKind.FUNCTION);
 					tree.add(node, parent);
 					parent = node;
-					statement_flag = true;
 				}
 				break;
 
@@ -230,6 +235,7 @@ public class Main {
 
 				case RETURN:
 				{
+					statement_flag = true;
 					Node<Keyword> node = new Node<Keyword>(new Keyword("ret", TokenKind.RETURN), NodeKind.RETURN);
 					boolean node_added = tree.add(node, parent);
 					if (!node_added) {
@@ -249,11 +255,19 @@ public class Main {
 				}
 				break;
 
-				case SEMICOLON:
+				case EXPRESSION:
 				{
-					Node<String> node = new Node<String>(";", NodeKind.SEMICOLON);
+					Node<?> node = new Node<String>(x.getName(), NodeKind.EXPRESSION);
 					tree.add(node, parent);
 					parent = node;
+				}
+				break;
+
+				case SEMICOLON:
+				{
+					// Node<String> node = new Node<String>(";", NodeKind.SEMICOLON);
+					// tree.add(node, parent);
+					// parent = node;
 					statement_flag = false;
 				}
 				break;
@@ -280,6 +294,7 @@ public class Main {
 		}
 
 		System.err.println("Unidentifiable Token (" + token + ") at line " + line_number + " and column " + offset + ". Exiting.");
+		System.err.println(token);
 		for (int i = 1; i < offset; ++i)
 			System.err.print(" ");
 		System.err.println("^");
@@ -341,7 +356,7 @@ public class Main {
 					offset = 0;
 				}
 
-				if ((current == ' ' || current == '\t' || current == '\n' || current == '\r' || current == ';') && !string_sequence) {
+				if (!string_sequence && (current == ' ' || current == '\t' || current == '\n' || current == '\r' || current == ';')) {
 
 					if (buffer.length() > 0) {
 						
@@ -401,7 +416,7 @@ public class Main {
 
         // Lexical Analysis
     	System.out.println("Starting Lexical Analysis...");
-        String filename = ".\\src\\test\\java\\com\\my\\compiler\\drlang\\input\\test1.drl";
+        String filename = "src\\test\\java\\com\\my\\compiler\\drlang\\input\\stage1\\test2.drl";
     	List<Token> token_list = lexer(filename);
     	for (Token x : token_list)
     		System.out.println(x.getKind() + "\t" + x.getName() + ", " + x.getLineNumber() + ", " + x.getOffset());
@@ -415,12 +430,14 @@ public class Main {
 
         // Intermediate Code Generation
 
-        // Optimization : This has very low priority for now
+        // Optimization: Currently expanding the Expression nodes
+        Optimizer.optimize(ast);
 
         // Code generation : Converting DRLang code to Assembly
-        System.out.println("Generating Assembly Code...");
-        String output_filepath = ".\\src\\test\\java\\com\\my\\compiler\\drlang\\output\\test1.s";
+        System.out.println("Writing Assembly Code...");
+        String output_filepath = "src\\test\\java\\com\\my\\compiler\\drlang\\output\\stage1\\test2.s";
         generate(ast, output_filepath);
-        System.out.println("Assembly generated!!!\n");
+        System.out.println("Assembly generated!!!");
+        System.out.println("Output Location: " + new File(output_filepath).getAbsolutePath() + "\n");
     }
 }
