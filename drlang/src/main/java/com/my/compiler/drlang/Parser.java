@@ -138,18 +138,16 @@ public class Parser {
 					}
 					prev_node_kind = getNodeKind(ch);
 					Operator op = new Operator(Character.toString(ch));
+					
+					while ((operand.size() > 1) && (op.getKind().compareTo(operator.peek().getKind()) < 0)) {
 
-					OperatorKind ok1 = op.getKind();
-					OperatorKind ok2 = operator.peek().getKind();
-					System.out.println("WORLD: " + ok2.getClass());// + "  " + ok2.getClass());
-					while (op.compareTo(operator.peek()) > 0) {
-
-						Node<String> temp = new Node<String>(op.getSymbol(), prev_node_kind);
+						Node<String> temp = new Node<String>(operator.peek().getSymbol(), prev_node_kind);
 						Node<?> lhs = operand.pop();
 						Node<?> rhs = operand.pop();
-						temp.addChild(lhs);
 						temp.addChild(rhs);
+						temp.addChild(lhs);
 						
+						operator.pop();
 						operand.push(temp);
 						node = temp;
 					}
@@ -197,38 +195,36 @@ public class Parser {
 						operand.push(op);
 						term = new StringBuilder("");
 						reading_number = false;
-						System.out.println("WORLD: " + op.getKind());
 					}
 					
 					do {
-
+						
 						if (operator.size() == 0) {
 							
 							System.err.println("Unbalanced parenthesis. Exiting.");
 							System.exit(255);
 						}
 						
-						String _operator = operator.peek().getSymbol();
+						String _operator = operator.pop().getSymbol();
+						
+						// TODO: need to handle this case better and more rigorously
+						// NB: Only because this condition seems off to me
+						if (operand.size() <= 1)
+							break;
+						
 						Node<String> temp = new Node<String>(_operator, getNodeKind(_operator));
 						
-						if (temp.getKind() == NodeKind.LEFT_PARENTHESIS) {
-							
-							operator.pop();
+						if (temp.getKind() == NodeKind.LEFT_PARENTHESIS)
 							break;
-						}
 						
 						Node<?> lhs = operand.pop();
 						Node<?> rhs = operand.pop();
-						temp.addChild(lhs);
 						temp.addChild(rhs);
+						temp.addChild(lhs);
 						
 						operand.push(temp);
 						node = temp;
-						
-						operator.pop();
-					}
-					
-					while (true);
+					} while (true);
 				}
 				break;
 
@@ -242,6 +238,7 @@ public class Parser {
 						reading_number = false;
 					}
 				}
+				System.out.println(ch + ":  OPTR SIZE: " + operator.size());
 				continue;
 				
 				default:
@@ -250,9 +247,7 @@ public class Parser {
 			}
 		}
 		
-		System.out.println();
-
-		while (!operator.isEmpty() && !(operand.size() == 1)) {
+		while (!(operand.size() == 1)) {
 
 			String _operator = operator.pop().getSymbol();
 			
@@ -260,23 +255,26 @@ public class Parser {
 			Node<?> lhs = operand.pop();			
 			Node<?> rhs = operand.pop();
 			
-			temp.addChild(lhs);
 			temp.addChild(rhs);
+			temp.addChild(lhs);
 			
 			operand.push(temp);
 			node = temp;
 		}
-
-		System.out.println(operator.size() + "  " + operand.size());
-		if (node != null)
-			node.preorder();
+		
+		if (!operator.isEmpty() || (operator.size() != 0)) {
+			
+			System.err.println("Bad Arithmetic Expression. Exiting.");
+			System.exit(255);
+		}
 		
 		return node;
 	}
 
 	public static void main(String[] args) {
 		
-		Node<?> node = createExpressionTree("(((20 + 30)))");
-		// node.preorder();
+		Node<?> node = createExpressionTree("((((20 + 30 * 40)))");
+		if (node != null)
+			node.preorder();
 	}
 }

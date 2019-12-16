@@ -39,6 +39,16 @@ public class Operator implements Comparable<Operator> {
 			this.kind = OperatorKind.EXPONENT_OP;
 			this.precedence = OperatorPrecedence.EXPONENT;
 			break;
+
+			case "(":
+			this.kind = OperatorKind.LEFT_PARENTHESIS;
+			this.precedence = OperatorPrecedence.PARENTHESIS;
+			break;
+
+			case ")":
+			this.kind = OperatorKind.RIGHT_PARENTHESIS;
+			this.precedence = OperatorPrecedence.PARENTHESIS;
+			break;
 		}
 	}
 
