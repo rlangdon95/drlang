@@ -56,6 +56,9 @@ public class Node<T> {
 
 	public void addChild(Node<?> node) {
 
+		if (node == null)
+			return;
+
 		node.setParent(this);
 		node.setLevel(this.level + 1);
 		node.setIndex(this.children.size());
@@ -81,5 +84,10 @@ public class Node<T> {
 		List<Node<?>> children = root.getChildren();
 		for (Node<?> x : children)
 			preorder(x, indent + 1);
+	}
+
+	public boolean isLeaf() {
+
+		return ((this.children.size() == 0) || (this.children == null));
 	}
 }

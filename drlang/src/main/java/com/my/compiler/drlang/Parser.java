@@ -238,7 +238,6 @@ public class Parser {
 						reading_number = false;
 					}
 				}
-				System.out.println(ch + ":  OPTR SIZE: " + operator.size());
 				continue;
 				
 				default:
@@ -247,7 +246,10 @@ public class Parser {
 			}
 		}
 		
-		while (!(operand.size() == 1)) {
+		if (term != null && term.length() > 0)
+			operand.push(new Node<String>(term.toString(), NodeKind.LITERAL));
+		
+		while (operand.size() > 1) {
 
 			String _operator = operator.pop().getSymbol();
 			
@@ -262,18 +264,24 @@ public class Parser {
 			node = temp;
 		}
 		
+		if (node == null)
+			node = operand.pop();
+		
 		if (!operator.isEmpty() || (operator.size() != 0)) {
 			
 			System.err.println("Bad Arithmetic Expression. Exiting.");
 			System.exit(255);
 		}
 		
-		return node;
+		Node<String> root = new Node<String>(String.valueOf(arr), NodeKind.EXPRESSION);
+		root.addChild(node);
+		
+		return root;
 	}
 
 	public static void main(String[] args) {
 		
-		Node<?> node = createExpressionTree("((((20 + 30 * 40)))");
+		Node<?> node = createExpressionTree("(20)");
 		if (node != null)
 			node.preorder();
 	}

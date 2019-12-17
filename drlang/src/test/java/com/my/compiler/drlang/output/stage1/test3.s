@@ -1,4 +1,4 @@
 	.globl _main()
 _main()
-	movl	$30, %eax
+	movl	$80, %eax
 	ret

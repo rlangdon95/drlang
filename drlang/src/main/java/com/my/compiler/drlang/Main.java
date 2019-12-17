@@ -21,14 +21,151 @@ import java.util.regex.Pattern;
  *
  */
 public class Main {
+	
+	public static int counter = 0;
+	
+	public static int evaluateExpressionTree(Node<?> node, Node<?> parent, Node<?> root) {
+		
+		if (node == null) {
+			
+			System.err.println("Bad execution. Exiting.");
+			System.exit(255);
+		}
+		
+		if (node.isLeaf() && (node.getKind() == NodeKind.LITERAL)) {
+			
+			int value = Integer.parseInt((String)node.getData());
+			node = new Node<String>((String)node.getData(), NodeKind.LITERAL);
+			return value;
+		}
 
-	public static void evaluateAndReplaceNode(Node<?> node, Node<?> root) {
+		int value = 0;
+		
+		switch (node.getKind()) {
+		
+			case LITERAL:
+			{
+				return (int)node.getData();
+			}
+		
+			case NOT_OP:
+			{
+				
+			}
+			break;
+			
+			case NEGATION_OP:
+			{
+				int lvalue = evaluateExpressionTree(node.getChildren().get(0), node, root);
+				value = -lvalue;
+				node = new Node<String>(Integer.toString(value), NodeKind.LITERAL);
+				node.setParent(parent);
+			}
+			break;
+			
+			case COMPLEMENT_OP:
+			{
+				int lvalue = evaluateExpressionTree(node.getChildren().get(0), node, root);
+				value = -lvalue + 1;
+				node = new Node<String>(Integer.toString(value), NodeKind.LITERAL);
+				node.setParent(parent);
+			}
+			break;
+		
+			case PLUS_OP:
+			{
+				int lvalue = evaluateExpressionTree(node.getChildren().get(0), node, root);
+				int rvalue = evaluateExpressionTree(node.getChildren().get(1), node, root);
+				value = lvalue + rvalue;
+				node = new Node<String>(Integer.toString(value), NodeKind.LITERAL);
+				node.setParent(parent);
+			}
+			break;
+			
+			case MINUS_OP:
+			{
+				int lvalue = evaluateExpressionTree(node.getChildren().get(0), node, root);
+				int rvalue = evaluateExpressionTree(node.getChildren().get(1), node, root);
+				value = lvalue - rvalue;
+				node = new Node<String>(Integer.toString(value), NodeKind.LITERAL);
+				node.setParent(parent);
+			}
+			break;
+			
+			case MULTIPLY_OP:
+			{
+				int lvalue = evaluateExpressionTree(node.getChildren().get(0), node, root);
+				int rvalue = evaluateExpressionTree(node.getChildren().get(1), node, root);
+				value = lvalue * rvalue;
+				node = new Node<String>(Integer.toString(value), NodeKind.LITERAL);
+				node.setParent(parent);
+			}
+			break;
+			
+			case DIVISION_OP:
+			{
+				int lvalue = evaluateExpressionTree(node.getChildren().get(0), node, root);
+				int rvalue = evaluateExpressionTree(node.getChildren().get(1), node, root);
+				value = lvalue / rvalue;
+				node = new Node<String>(Integer.toString(value), NodeKind.LITERAL);
+				node.setParent(parent);
+			}
+			break;
+			
+			case OR_OP:
+			case AND_OP:
+			case XOR_OP:
+			case EQUALS_OP:
+			case NOTEQUALS_OP:
+			{
+				
+			}
+			break;
+			
+			case EXPRESSION:
+			{
+				System.out.println("DEBUG: " + node.getData() + "  " + node.getKind() + "  " + node.isLeaf());
+				++counter;
+				if (counter > 10)
+					System.exit(255);
+				if (node.isLeaf()) {
+					
+					int _value = evaluateExpressionTree(node, parent, root);
+					Node<String> temp = new Node<String>(Integer.toString(_value), NodeKind.LITERAL);
+					node.addChild(temp);
+				}
+				else {
+					
+					int _value = evaluateExpressionTree(node.getChildren().get(0), node, root);
+					Node<String> temp = new Node<String>(Integer.toString(_value), NodeKind.LITERAL);
+					node.getChildren().set(0, temp);
+				}
+			}
+			break;
+		}
+		
+		return value;
+	}
+
+	public static void evaluateAndReplaceNode(Node<?> parent, Node<?> node, int child_index, Node<?> root) {
 
 		switch (node.getKind()) {
 
 			case EXPRESSION:
 			{
-
+				parent.getChildren().set(child_index, node);
+				if (node.isLeaf()) {
+					
+					int value = evaluateExpressionTree(node, parent, root);
+					Node<String> temp = new Node<String>(Integer.toString(value), NodeKind.LITERAL);
+					node.addChild(temp);
+				}
+				else {
+					
+					int value = evaluateExpressionTree(node.getChildren().get(0), node, root);
+					Node<String> temp = new Node<String>(Integer.toString(value), NodeKind.LITERAL);
+					node.getChildren().set(0, temp);
+				}
 			}
 			break;
 
@@ -98,11 +235,11 @@ public class Main {
 				// TODO: if the child is of kind EXPRESSION, evaluate the expression
 				//       and replace the child with a LITERAL kind node having the evaluated data
 				if (node.getChildren().get(0).getKind() == NodeKind.EXPRESSION)
-					evaluateAndReplaceNode(node, root);
+					evaluateAndReplaceNode(node, node.getChildren().get(0), 0, root);
 
 				// TODO: if the return statement returns the value returned by another function
 				else if (node.getChildren().get(0).getKind() == NodeKind.FUNCTION)
-					evaluateAndReplaceNode(node, root);
+					evaluateAndReplaceNode(node, node.getChildren().get(0), 0, root);
 
 				/*else {
 
@@ -110,8 +247,12 @@ public class Main {
 					System.exit(255);
 				}*/
 
+				// TODO: this if-else needs to be fixed and made more generic
 				// append the evaluated value to assembly code
-				line.append(node.getChildren().get(0).getData().toString());
+				if (node.getChildren().get(0).getKind() == NodeKind.EXPRESSION)
+					line.append(node.getChildren().get(0).getChildren().get(0).getData().toString());
+				else
+					line.append(node.getChildren().get(0).getData().toString());
 				line.append(", ");
 				line.append("%");
 				line.append(Constants.EAX);
@@ -172,11 +313,20 @@ public class Main {
 
 	public static AbsSynTree parser(List<Token> token_list, String filename) {
 
+		// index location of the current token being processed from the token list
+		int index = -1;
+
 		// flag to denote if we are currently inside a function
 		boolean function_flag = false;
 
 		// flag to denote if we are currently processing a statement
 		boolean statement_flag = false;
+
+		// flag to denote if we are in the middle of reading an expression
+		boolean expression_flag = false;
+
+		// form the expression
+		StringBuilder expression = new StringBuilder("");
 
 		// return kind of the next function
 		FunctionReturnKind return_kind = FunctionReturnKind.VOID;
@@ -190,7 +340,8 @@ public class Main {
 		Node<?> parent = root;
 
 		for (Token x : token_list) {
-			
+
+			++index;
 			switch (x.getKind()) {
 
 				case INT:
@@ -220,8 +371,31 @@ public class Main {
 				}
 				break;
 
+				case OPEN_PARENTHESIS:
+				{
+					expression_flag = true;
+				}
+				break;
+
+				case CLOSE_PARENTHESIS:
+				{
+					if (expression_flag)
+						expression.append(x.getName());
+				}
+				break;
+
 				case OPEN_CURLY:
-				curly_braces_stack.push(true);
+				{
+					curly_braces_stack.push(true);
+					if (expression_flag) {
+
+						Node<?> node = new Node<String>(expression.toString(), NodeKind.EXPRESSION);
+						tree.add(node, parent);
+						parent = node;
+						expression_flag = false;
+						expression = new StringBuilder("");
+					}
+				}
 				break;
 
 				case CLOSE_CURLY:
@@ -249,31 +423,55 @@ public class Main {
 
 				case LITERAL_INT:
 				{
-					Node<Integer> node = new Node<Integer>(Integer.parseInt(x.getName()), NodeKind.LITERAL);
-					tree.add(node, parent);
-					parent = node;
+					expression_flag = true;
+					expression.append(x.getName());
+				}
+				break;
+
+				case PLUS_OP:
+				case MINUS_OP:
+				case MULTIPLY_OP:
+				case DIVISION_OP:
+				{
+					if (expression_flag) {
+
+						expression.append(x.getName());
+						System.out.println("BINARY OP: " + expression.toString());
+					}
+				}
+				break;
+
+				case TERM:
+				{
+					expression_flag = true;
+					expression.append(x.getName());
 				}
 				break;
 
 				case EXPRESSION:
 				{
-					Node<?> node = new Node<String>(x.getName(), NodeKind.EXPRESSION);
-					tree.add(node, parent);
-					parent = node;
+					if (!expression_flag)
+						expression_flag = true;
+					expression.append(x.getName());
 				}
 				break;
 
 				case SEMICOLON:
 				{
-					// Node<String> node = new Node<String>(";", NodeKind.SEMICOLON);
-					// tree.add(node, parent);
-					// parent = node;
+					if (expression_flag) {
+
+						Node<?> node = new Node<String>(expression.toString(), NodeKind.EXPRESSION);
+						tree.add(node, parent);
+						parent = node;
+						expression_flag = false;
+						expression = new StringBuilder("");
+					}
 					statement_flag = false;
 				}
 				break;
 
 				default:
-				System.err.println("Unidenfied token kind at line " + x.getName() + ", column " + x.getOffset() + ".");
+				System.err.println("Unidentified token kind " + x.getKind() + " at line " + x.getLineNumber() + ", column " + x.getOffset() + ".");
 				System.exit(255);
 			}
 		}
@@ -283,21 +481,21 @@ public class Main {
 
 	public static TokenKind getTokenKind(String token, int line_number, int offset) {
 
+		int index = 0;
 		for (TokenPattern x : Constants.KEYWORDS) {
 
 			Pattern pat = Pattern.compile(x.getName());
 			boolean match = pat.matcher(token).matches();
-			if (match) {
-
+			++index;
+			if (match)
 				return x.getKind();
-			}
 		}
 
-		System.err.println("Unidentifiable Token (" + token + ") at line " + line_number + " and column " + offset + ". Exiting.");
+		System.err.println("Unidentifiable Token <" + token + "> at line " + line_number + " and column " + offset + ". Exiting.");
 		System.err.println(token);
-		for (int i = 1; i < offset; ++i)
+		/*for (int i = 1; i < offset; ++i)
 			System.err.print(" ");
-		System.err.println("^");
+		System.err.println("^"); */
 		System.exit(255);
 		return null;
 	}
@@ -305,6 +503,7 @@ public class Main {
 	public static Token makeToken(String str, int id, int line_number, int offset) {
 
 		Token t1 = new Token(str, id, line_number, offset, getTokenKind(str, line_number, offset));
+		// System.out.println("HELLO: " + t1.getKind());
 		return t1;
 	}
 
@@ -343,6 +542,12 @@ public class Main {
 		// a boolean flag to check if the the current space, tab, linefeed, or carriage return is part of the string or code
 		boolean string_sequence = false;
 
+		// a boolean flag to denote if we are in the middle of reading a token
+		boolean reading_token = false;
+
+		// backup variable to store previously read token
+		Token prev_token = null;
+
 		try (FileInputStream fis = new FileInputStream(file)) {
 
 			if (fis.available() > 0)
@@ -350,23 +555,47 @@ public class Main {
 
 			while (fis.available() > 0) {
 
+				// System.out.println("DEBUG: " + current + " " + reading_token);
+
 				if (current == '\n') {
 
 					++line_number;
 					offset = 0;
 				}
 
-				if (!string_sequence && (current == ' ' || current == '\t' || current == '\n' || current == '\r' || current == ';')) {
+				if (!string_sequence && (current == '(' || current == ')')) {
+					
+					if (!reading_token) {
+
+						prev_token = makeToken(Character.toString(current), token_id++, line_number, offset);
+						token_list.add(prev_token);
+					}
+					++offset;
+				}
+
+				else if (!string_sequence && (current == ' ' || current == '\t' || current == '\n' || current == '\r' || current == ';')) {
+
+					if (current == '\t')
+						offset += 4;
+					else
+						++offset;
+					if (prev_token != null && prev_token.getKind() == TokenKind.OPEN_PARENTHESIS && current != ';') {
+
+						current = (char) fis.read();
+						continue;
+					}
+
+					reading_token = false;
 
 					if (buffer.length() > 0) {
 						
-						token_list.add(makeToken(buffer.toString(), token_id, line_number, offset - 1));
+						prev_token = makeToken(buffer.toString(), token_id++, line_number, offset);
+						token_list.add(prev_token);
 						buffer = new StringBuilder("");
 						if (current == ';') {
 
 							buffer.append(current);
-							current = (char) fis.read();
-							++offset;
+							current = (char) fis.read();							
 							continue;
 						}
 					}
@@ -382,11 +611,14 @@ public class Main {
 						}
 					}
 
+					if (current != '(')
+						reading_token = true;
 					continue;
 				}
 
 				buffer.append(current);
 				++offset;
+				reading_token = true;
 				current = (char) fis.read();
 			}
 
@@ -400,8 +632,11 @@ public class Main {
 			e.printStackTrace();
 		}
 
-		if (buffer.length() > 0)
-			token_list.add(makeToken(buffer.toString(), token_id, line_number, offset - 1));
+		if (buffer.length() > 0) {
+
+			prev_token = makeToken(buffer.toString(), token_id++, line_number, offset);
+			token_list.add(prev_token);
+		}
 
 		return token_list;
 	}
@@ -411,13 +646,13 @@ public class Main {
     public static void main(String[] args) {
         
     	init();
-    	System.out.println("Working Directory = " +
-              System.getProperty("user.dir"));
+    	// System.out.println("Working Directory = " + System.getProperty("user.dir"));
 
         // Lexical Analysis
     	System.out.println("Starting Lexical Analysis...");
-        String filename = "src\\test\\java\\com\\my\\compiler\\drlang\\input\\stage1\\test2.drl";
+        String filename = "src\\test\\java\\com\\my\\compiler\\drlang\\input\\stage1\\test3.drl";
     	List<Token> token_list = lexer(filename);
+    	System.out.println("List of all tokens: ");
     	for (Token x : token_list)
     		System.out.println(x.getKind() + "\t" + x.getName() + ", " + x.getLineNumber() + ", " + x.getOffset());
     	System.out.println("Lexical analysis complete...!!!\n");
@@ -431,11 +666,13 @@ public class Main {
         // Intermediate Code Generation
 
         // Optimization: Currently expanding the Expression nodes
+        System.out.println("Optimizing the Parse Tree...");
         Optimizer.optimize(ast);
+        System.out.println("Complete...!!!\n");
 
         // Code generation : Converting DRLang code to Assembly
         System.out.println("Writing Assembly Code...");
-        String output_filepath = "src\\test\\java\\com\\my\\compiler\\drlang\\output\\stage1\\test2.s";
+        String output_filepath = "src\\test\\java\\com\\my\\compiler\\drlang\\output\\stage1\\test3.s";
         generate(ast, output_filepath);
         System.out.println("Assembly generated!!!");
         System.out.println("Output Location: " + new File(output_filepath).getAbsolutePath() + "\n");

@@ -58,6 +58,8 @@ public class Constants {
 
 	public static final TokenPattern CLOSE_CURLY = new TokenPattern("\\}", TokenKind.CLOSE_CURLY);
 
+	public static final TokenPattern COMMA = new TokenPattern("\\,", TokenKind.COMMA);
+
 	public static final TokenPattern SEMICOLON = new TokenPattern(";", TokenKind.SEMICOLON);
 
 	public static final TokenPattern RETURN = new TokenPattern("ret", TokenKind.RETURN);
@@ -69,7 +71,17 @@ public class Constants {
 	public static final TokenPattern LITERAL_INT = new TokenPattern("[0-9]+", TokenKind.LITERAL_INT);
 
 	// Arithmetic expressions
-	public static final TokenPattern EXPRESSION = new TokenPattern("\\(*[0-9]+\\)*", TokenKind.EXPRESSION);
+	public static final TokenPattern PLUS_OP = new TokenPattern("\\+", TokenKind.PLUS_OP);
+
+	public static final TokenPattern MINUS_OP = new TokenPattern("\\-", TokenKind.MINUS_OP);
+	
+	public static final TokenPattern MULTIPLY_OP = new TokenPattern("\\*", TokenKind.MULTIPLY_OP);
+	
+	public static final TokenPattern DIVISION_OP = new TokenPattern("\\/", TokenKind.DIVISION_OP);
+
+	public static final TokenPattern TERM = new TokenPattern("\\(*\\s*[0-9]+\\s*\\)*", TokenKind.TERM);
+
+	public static final TokenPattern EXPRESSION = new TokenPattern("(\\s*" + TERM.getName() + "\\s*[\\+\\-\\*\\/]\\s*)*" + TERM.getName(), TokenKind.EXPRESSION);
 	// Arithmetic expressions
 
 	// Unary Operators
@@ -81,15 +93,25 @@ public class Constants {
 	// Unary Operators
 
 	public static final TokenPattern KEYWORDS[] = {	INT,
+
 													OPEN_PARENTHESIS,
 													CLOSE_PARENTHESIS,
 													OPEN_CURLY,
 													CLOSE_CURLY,
+
+													COMMA,
 													SEMICOLON,
+													
 													RETURN,
+													
 													IDENTIFIER,
 													IDENTIFIER_FUNCTION,
 													LITERAL_INT,
+													PLUS_OP,
+													MINUS_OP,
+													MULTIPLY_OP,
+													DIVISION_OP,
+													TERM,
 													EXPRESSION,
 													NEGATION,
 													COMPLEMENT,
