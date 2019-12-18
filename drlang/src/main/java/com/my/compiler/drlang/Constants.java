@@ -68,7 +68,25 @@ public class Constants {
 
 	public static final TokenPattern IDENTIFIER_FUNCTION = new TokenPattern("([a-zA-Z][a-zA-Z0-9_$]*\\(\\))", TokenKind.IDENTIFIER_FUNCTION);
 
-	public static final TokenPattern LITERAL_INT = new TokenPattern("[0-9]+", TokenKind.LITERAL_INT);
+	public static final TokenPattern LITERAL_INT = new TokenPattern("[0-9]+|[+-][0-9]+", TokenKind.LITERAL_INT);
+
+	// Logical operators
+	public static final TokenPattern AND_OP = new TokenPattern("&&", TokenKind.AND_OP);
+
+	public static final TokenPattern OR_OP = new TokenPattern("\\|\\|", TokenKind.OR_OP);
+
+	public static final TokenPattern EQUALS_OP = new TokenPattern("==", TokenKind.EQUALS_OP);
+
+	public static final TokenPattern NOT_EQUALS_OP = new TokenPattern("!=", TokenKind.NOT_EQUALS_OP);
+
+	public static final TokenPattern LESSER_OP = new TokenPattern("<", TokenKind.LESSER_OP);
+
+	public static final TokenPattern GREATER_OP = new TokenPattern(">", TokenKind.GREATER_OP);
+
+	public static final TokenPattern LESSER_EQUALS_OP = new TokenPattern("<=", TokenKind.LESSER_EQUALS_OP);
+
+	public static final TokenPattern GREATER_EQUALS_OP = new TokenPattern(">=", TokenKind.GREATER_EQUALS_OP);
+	// Logical operators
 
 	// Arithmetic expressions
 	public static final TokenPattern PLUS_OP = new TokenPattern("\\+", TokenKind.PLUS_OP);
@@ -79,9 +97,13 @@ public class Constants {
 	
 	public static final TokenPattern DIVISION_OP = new TokenPattern("\\/", TokenKind.DIVISION_OP);
 
+	public static final TokenPattern ASSIGNMENT_OP = new TokenPattern("=", TokenKind.ASSIGNMENT_OP);
+
 	public static final TokenPattern TERM = new TokenPattern("\\(*\\s*[0-9]+\\s*\\)*", TokenKind.TERM);
 
-	public static final TokenPattern EXPRESSION = new TokenPattern("(\\s*" + TERM.getName() + "\\s*[\\+\\-\\*\\/]\\s*)*" + TERM.getName(), TokenKind.EXPRESSION);
+	public static final TokenPattern EXPRESSION = new TokenPattern("(\\s*" + TERM.getName()
+																		   + "\\s*[\\+\\-\\*\\/]\\s*)*"
+																		   + TERM.getName(), TokenKind.EXPRESSION);
 	// Arithmetic expressions
 
 	// Unary Operators

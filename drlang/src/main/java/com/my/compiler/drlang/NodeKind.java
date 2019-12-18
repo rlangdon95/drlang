@@ -22,7 +22,8 @@ public enum NodeKind {
 
 	// Unary Operators
 	NOT_OP,
-	NEGATION_OP,
+	NEGATE_OP,
+	POSITIVE_OP,
 	COMPLEMENT_OP,
 
 	// Logical Operators

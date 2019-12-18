@@ -95,12 +95,14 @@ public class Parser {
 		StringBuilder term = new StringBuilder("");
 		boolean reading_number = false;
 		boolean is_negative = false;
+		boolean negate_expression = false;
 		NodeKind prev_node_kind = NodeKind.NOKIND;
 		for (int i = low; i < high; ++i) {
 
 			if (low == 0 && i == 0 && arr[i] == '-') {
 
 				// TODO: create a negate node and make it the parent of rest of the expression tree
+				negate_expression = !negate_expression;
 				continue;
 			}
 
@@ -117,7 +119,17 @@ public class Parser {
 
 						// add the number to the operand stack
 						Node<String> number = new Node<String>(term.toString(), NodeKind.LITERAL);
-						operand.push(number);
+						if (!operand.isEmpty() && operand.peek().getKind() == NodeKind.POSITIVE_OP) {
+
+							operand.pop();
+							operand.push(number);
+						}
+
+						else if (!operand.isEmpty() && operand.peek().getKind() == NodeKind.NEGATE_OP)
+							operand.peek().addChild(number);
+
+						else
+							operand.push(number);
 
 						// reset term
 						term = new StringBuilder("");
@@ -125,16 +137,25 @@ public class Parser {
 						reading_number = false;
 					}
 
-					if (ch == '-') {
+					if (ch == '-' || ch == '+') {
 
 						// TODO: Handle negative values
-						/* if (prev_node_kind == NodeKind.PLUS_OP ||
+						if (prev_node_kind == NodeKind.PLUS_OP ||
 							prev_node_kind == NodeKind.MINUS_OP ||
 							prev_node_kind == NodeKind.MULTIPLY_OP ||
 							prev_node_kind == NodeKind.DIVISION_OP ||
 							prev_node_kind == NodeKind.LEFT_PARENTHESIS ||
-							prev_node_kind == NodeKind.RIGHT_PARENTHESIS)
-							is_negative = true; */
+							prev_node_kind == NodeKind.RIGHT_PARENTHESIS) {
+							
+							is_negative = true;
+							
+							Node<String> sign = (ch == '-') ? new Node<String>(Character.toString(ch), NodeKind.NEGATE_OP)
+									                        : new Node<String>(Character.toString(ch), NodeKind.POSITIVE_OP);
+							if ((operand.peek().getKind() != NodeKind.NEGATE_OP) && (operand.peek().getKind() != NodeKind.POSITIVE_OP))
+								operand.push(sign);
+							else
+								operand.peek().addChild(sign);
+						}
 					}
 					prev_node_kind = getNodeKind(ch);
 					Operator op = new Operator(Character.toString(ch));
@@ -169,6 +190,7 @@ public class Parser {
 				{
 					reading_number = true;
 					term.append(ch);
+					prev_node_kind = NodeKind.LITERAL;
 				}
 				break;
 
@@ -177,7 +199,18 @@ public class Parser {
 					if (reading_number) {
 
 						Node<String> op = new Node<String>(term.toString(), NodeKind.LITERAL);
-						operand.push(op);
+						if (!operand.isEmpty() && operand.peek().getKind() == NodeKind.POSITIVE_OP) {
+
+							operand.pop();
+							operand.push(op);
+						}
+
+						else if (!operand.isEmpty() && operand.peek().getKind() == NodeKind.NEGATE_OP)
+							operand.peek().addChild(op);
+
+						else
+							operand.push(op);
+
 						term = new StringBuilder("");
 						reading_number = false;
 					}
@@ -192,7 +225,18 @@ public class Parser {
 					if (reading_number) {
 						
 						Node<String> op = new Node<String>(term.toString(), NodeKind.LITERAL);
-						operand.push(op);
+						if (!operand.isEmpty() && operand.peek().getKind() == NodeKind.POSITIVE_OP) {
+
+							operand.pop();
+							operand.push(op);
+						}
+
+						else if (!operand.isEmpty() && operand.peek().getKind() == NodeKind.NEGATE_OP)
+							operand.peek().addChild(op);
+
+						else
+							operand.push(op);
+
 						term = new StringBuilder("");
 						reading_number = false;
 					}
@@ -233,7 +277,18 @@ public class Parser {
 					if (reading_number) {
 					
 						Node<String> number = new Node<String>(term.toString(), NodeKind.LITERAL);
-						operand.push(number);
+						if (!operand.isEmpty() && operand.peek().getKind() == NodeKind.POSITIVE_OP) {
+
+							operand.pop();
+							operand.push(number);
+						}
+
+						else if (!operand.isEmpty() && operand.peek().getKind() == NodeKind.NEGATE_OP)
+							operand.peek().addChild(number);
+
+						else
+							operand.push(number);
+						
 						term = new StringBuilder("");
 						reading_number = false;
 					}
@@ -273,6 +328,13 @@ public class Parser {
 			System.exit(255);
 		}
 		
+		if (negate_expression) {
+			
+			Node<String> neg = new Node<String>("-", NodeKind.NEGATE_OP);
+			neg.addChild(node);
+			node = neg;
+		}
+		
 		Node<String> root = new Node<String>(String.valueOf(arr), NodeKind.EXPRESSION);
 		root.addChild(node);
 		
@@ -281,7 +343,7 @@ public class Parser {
 
 	public static void main(String[] args) {
 		
-		Node<?> node = createExpressionTree("(20)");
+		Node<?> node = createExpressionTree("20 + 30 --10");
 		if (node != null)
 			node.preorder();
 	}

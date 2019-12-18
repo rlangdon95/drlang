@@ -24,6 +24,12 @@ public class Main {
 	
 	public static int counter = 0;
 	
+	public static final String INPUT_DIRECTORY = "src\\test\\java\\com\\my\\compiler\\drlang\\input\\stage1\\";
+	
+	public static final String OUTPUT_DIRECTORY = "src\\test\\java\\com\\my\\compiler\\drlang\\output\\stage1\\";
+	
+	// TODO: change return kind from int to something more generic - String maybe
+	//       or Value object :: {Object value; ValueKind kind}
 	public static int evaluateExpressionTree(Node<?> node, Node<?> parent, Node<?> root) {
 		
 		if (node == null) {
@@ -54,7 +60,15 @@ public class Main {
 			}
 			break;
 			
-			case NEGATION_OP:
+			case POSITIVE_OP:
+			{
+				value = evaluateExpressionTree(node.getChildren().get(0), node, root);
+				node = new Node<String>(Integer.toString(value), NodeKind.LITERAL);
+				node.setParent(parent);
+			}
+			break;
+			
+			case NEGATE_OP:
 			{
 				int lvalue = evaluateExpressionTree(node.getChildren().get(0), node, root);
 				value = -lvalue;
@@ -112,6 +126,17 @@ public class Main {
 			}
 			break;
 			
+			case EXPONENT_OP:
+			{
+				int lvalue = evaluateExpressionTree(node.getChildren().get(0), node, root);
+				int rvalue = evaluateExpressionTree(node.getChildren().get(1), node, root);
+				long temp = (long) Math.round(Math.pow(lvalue, rvalue));
+				node = new Node<String>(Long.toString(temp), NodeKind.LITERAL);
+				node.setParent(parent);
+				value = (int)temp;
+			}
+			break;
+			
 			case OR_OP:
 			case AND_OP:
 			case XOR_OP:
@@ -124,10 +149,6 @@ public class Main {
 			
 			case EXPRESSION:
 			{
-				System.out.println("DEBUG: " + node.getData() + "  " + node.getKind() + "  " + node.isLeaf());
-				++counter;
-				if (counter > 10)
-					System.exit(255);
 				if (node.isLeaf()) {
 					
 					int _value = evaluateExpressionTree(node, parent, root);
@@ -142,6 +163,30 @@ public class Main {
 				}
 			}
 			break;
+			case ASSIGN_OP:
+			{
+				// TODO:
+			}
+			break;
+			
+			case FUNCTION:
+			{
+				// TODO:
+			}
+			break;
+			
+			case NOKIND:
+			case LEFT_PARENTHESIS:
+			case PROGRAM:
+			case RETURN:
+			case RIGHT_PARENTHESIS:
+			case SEMICOLON:
+			default:
+			{
+				System.err.println("Unexpected node kind in expression. Exiting.");
+				System.exit(255);
+			}
+			break;
 		}
 		
 		return value;
@@ -153,6 +198,7 @@ public class Main {
 
 			case EXPRESSION:
 			{
+				System.out.println("DEBUG: " + node.getData() + "  " + node.getKind() + "  " + node.isLeaf());
 				parent.getChildren().set(child_index, node);
 				if (node.isLeaf()) {
 					
@@ -650,7 +696,7 @@ public class Main {
 
         // Lexical Analysis
     	System.out.println("Starting Lexical Analysis...");
-        String filename = "src\\test\\java\\com\\my\\compiler\\drlang\\input\\stage1\\test3.drl";
+        String filename = INPUT_DIRECTORY + "test5.drl";
     	List<Token> token_list = lexer(filename);
     	System.out.println("List of all tokens: ");
     	for (Token x : token_list)
@@ -672,7 +718,7 @@ public class Main {
 
         // Code generation : Converting DRLang code to Assembly
         System.out.println("Writing Assembly Code...");
-        String output_filepath = "src\\test\\java\\com\\my\\compiler\\drlang\\output\\stage1\\test3.s";
+        String output_filepath = OUTPUT_DIRECTORY + "test5.s";
         generate(ast, output_filepath);
         System.out.println("Assembly generated!!!");
         System.out.println("Output Location: " + new File(output_filepath).getAbsolutePath() + "\n");
