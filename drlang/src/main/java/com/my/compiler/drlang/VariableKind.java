@@ -1,9 +1,8 @@
 package com.my.compiler.drlang;
 
-public enum FunctionReturnKind {
+public enum VariableKind {
 
 	NOKIND,
-	VOID,
 	INT,
 	REAL
 }

@@ -6,7 +6,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
@@ -27,6 +29,10 @@ public class Main {
 	public static final String INPUT_DIRECTORY = "src\\test\\java\\com\\my\\compiler\\drlang\\input\\stage1\\";
 	
 	public static final String OUTPUT_DIRECTORY = "src\\test\\java\\com\\my\\compiler\\drlang\\output\\stage1\\";
+	
+	public static Set<Variable> var_set = new HashSet<Variable>();
+	
+	public static int program_scope = 0;
 	
 	// TODO: change return kind from int to something more generic - String maybe
 	//       or Value object :: {Object value; ValueKind kind}
@@ -198,7 +204,6 @@ public class Main {
 
 			case EXPRESSION:
 			{
-				System.out.println("DEBUG: " + node.getData() + "  " + node.getKind() + "  " + node.isLeaf());
 				parent.getChildren().set(child_index, node);
 				if (node.isLeaf()) {
 					
@@ -245,10 +250,12 @@ public class Main {
 				String function_name = ((Function) node.getData()).getName();
 				StringBuilder line = new StringBuilder("\t.globl _");
 				line.append(function_name);
+				line.append("()");
 				lines.add(line.toString());
 
 				line = new StringBuilder("_");
 				line.append(function_name);
+				line.append("()");
 				lines.add(line.toString());
 				for (Node<?> x : (List<Node<?>>)node.getChildren())
 					generate(x, root, lines);
@@ -257,6 +264,7 @@ public class Main {
 
 			case RETURN:
 			{
+				boolean negate = false;
 				// Error if return type is not void
 				if (node.getChildren().size() == 0) {
 					
@@ -303,10 +311,32 @@ public class Main {
 				line.append("%");
 				line.append(Constants.EAX);
 				lines.add(line.toString());
+				
+				if (negate) {
+					
+					line.append("\t");
+					line.append(Constants.NEG);
+					line.append("\t");
+					line.append(Constants.EAX);
+					lines.add(line.toString());
+				}
 
 				line = new StringBuilder("\t");
 				line.append(Constants.RET);
 				lines.add(line.toString());
+			}
+			break;
+			
+			case STATEMENT:
+			{
+				if (node.isLeaf()) {
+					
+					System.err.println("Parsing was not done or was incomplete. Exiting.");
+					System.exit(255);
+				}
+				
+				for (Node x : node.getChildren())
+					generate(x, node, lines);
 			}
 			break;
 
@@ -316,7 +346,7 @@ public class Main {
 			}
 			break;
 		default:
-			System.err.println("Bad Node Kind. Exiting.");
+			System.err.println("Bad Node Kind. Exiting. " + node.getKind().toString());
 			System.exit(255);
 			break;
 		}
@@ -335,7 +365,7 @@ public class Main {
 			Node<?> root = ast.getRoot();
 			for (Node<?> x : root.getChildren()) {
 
-				if (((Function) x.getData()).getName().equals("main()")) {
+				if (((Function) x.getData()).getName().equals("main")) {
 
 					generate(x, root, lines);
 					break;
@@ -343,7 +373,7 @@ public class Main {
 			}
 
 			for (String x : lines) {
-
+				
 				os.write(x.getBytes(), 0, x.length());
 				os.write(Constants.LINEFEED.getBytes(), 0, Constants.LINEFEED.length());
 			}
@@ -356,203 +386,189 @@ public class Main {
 			System.exit(255);
 		}
 	}
+	
+	public static void addStatements(List<Token> token_list, Node<?> root) {
 
-	public static AbsSynTree parser(List<Token> token_list, String filename) {
+		// number of valid tokens detected
+		int number_of_tokens = token_list.size();
 
-		// index location of the current token being processed from the token list
-		int index = -1;
+		// expecting function
+		boolean expecting_function = true;
 
-		// flag to denote if we are currently inside a function
-		boolean function_flag = false;
+		// last function that was inserted into the syn tree
+		Node<Function> function_node = null;
 
-		// flag to denote if we are currently processing a statement
-		boolean statement_flag = false;
+		// function object reference
+		Function func = null;
 
-		// flag to denote if we are in the middle of reading an expression
-		boolean expression_flag = false;
+		// function id
+		int function_id = 0;
 
-		// form the expression
-		StringBuilder expression = new StringBuilder("");
+		// function return kind
+		FunctionReturnKind retkind = FunctionReturnKind.NOKIND;
 
-		// return kind of the next function
-		FunctionReturnKind return_kind = FunctionReturnKind.VOID;
+		// flag to denote if we are expecting function arguments
+		boolean arguments = false;
 
-		// stack for checking balanced curly braces
-		Stack<Boolean> curly_braces_stack = new Stack<Boolean>();
+		// flag to denote if we are present inside function definition
+		boolean inside_function = false;
 
-		AbsSynTree tree = new AbsSynTree();
-		Node<Program> root = new Node<Program>(new Program(filename), NodeKind.PROGRAM);
-		tree.add(root, null);
-		Node<?> parent = root;
+		// keep count of curly braces
+		int curly_count = 0;
 
-		for (Token x : token_list) {
+		// current statement: collection of tokens
+		List<Token> statement = null;
 
-			++index;
-			switch (x.getKind()) {
+		for (int i = 0; i < number_of_tokens; ++i) {
+
+			Token token = token_list.get(i);
+			Token prev_token = (i == 0) ? null : token_list.get(i - 1);
+
+			switch (token.getKind()) {
 
 				case INT:
-				{
-					if (!function_flag) {
-						
-						return_kind = FunctionReturnKind.INT;
-						function_flag = true;
-					}
+					if (expecting_function && (retkind != FunctionReturnKind.NOKIND)) {
 
-					else {
-
-						System.err.print("Line " + x.getLineNumber() + ", column " + x.getOffset() + ": ");
-						System.err.println("Multiple return types for function " + x.getName() + ".");
+						System.err.println("Multiple return kinds for a function not supported yet. Exiting.");
 						System.exit(255);
 					}
-				}
-				break;
 
-				case IDENTIFIER_FUNCTION:
-				{
-					function_flag = true;
-					Function fun = new Function(x.getName(), x.getId(), return_kind);
-					Node<Function> node = new Node<Function>(fun, NodeKind.FUNCTION);
-					tree.add(node, parent);
-					parent = node;
-				}
-				break;
+					if (expecting_function)
+						retkind = FunctionReturnKind.INT;
+					else
+						statement.add(token);
+					break;
+
+				case IDENTIFIER:
+					if (expecting_function)
+						func = new Function(token.getName(), function_id++, retkind);
+					else
+						statement.add(token);
+					break;
 
 				case OPEN_PARENTHESIS:
-				{
-					expression_flag = true;
-				}
-				break;
+					if (expecting_function)
+						arguments = true;
+
+					else {}
+					break;
 
 				case CLOSE_PARENTHESIS:
-				{
-					if (expression_flag)
-						expression.append(x.getName());
-				}
-				break;
+					if (expecting_function) {
+
+						arguments = false;
+						function_node = new Node<Function>(func, NodeKind.FUNCTION);
+						root.addChild(function_node);
+					}
+					break;
 
 				case OPEN_CURLY:
-				{
-					curly_braces_stack.push(true);
-					if (expression_flag) {
+					++curly_count;
+					if (expecting_function) {
 
-						Node<?> node = new Node<String>(expression.toString(), NodeKind.EXPRESSION);
-						tree.add(node, parent);
-						parent = node;
-						expression_flag = false;
-						expression = new StringBuilder("");
+						expecting_function = false;
+						inside_function = true;
+						statement = new ArrayList<Token>();
 					}
-				}
-				break;
+					break;
 
 				case CLOSE_CURLY:
-				if (curly_braces_stack == null || curly_braces_stack.isEmpty()) {
+					--curly_count;
+					if (curly_count < 0) {
 					
-					System.err.println("Unmatched curly braces at line " + x.getLineNumber() + ", column " + x.getOffset() + ".");
-					System.exit(255);
-				}
-				curly_braces_stack.pop();
-				break;
-
-				case RETURN:
-				{
-					statement_flag = true;
-					Node<Keyword> node = new Node<Keyword>(new Keyword("ret", TokenKind.RETURN), NodeKind.RETURN);
-					boolean node_added = tree.add(node, parent);
-					if (!node_added) {
-						
-						System.err.println("Parser error encountered...!!!");
+						System.err.println("Unmatched closing brace found. Exiting.");
 						System.exit(255);
 					}
-					parent = node;
-				}
-				break;
 
-				case LITERAL_INT:
-				{
-					expression_flag = true;
-					expression.append(x.getName());
-				}
-				break;
+					else if (curly_count == 0) {
 
-				case PLUS_OP:
-				case MINUS_OP:
-				case MULTIPLY_OP:
-				case DIVISION_OP:
-				{
-					if (expression_flag) {
-
-						expression.append(x.getName());
-						System.out.println("BINARY OP: " + expression.toString());
+						inside_function = false;
+						expecting_function = true;
 					}
-				}
-				break;
-
-				case TERM:
-				{
-					expression_flag = true;
-					expression.append(x.getName());
-				}
-				break;
-
-				case EXPRESSION:
-				{
-					if (!expression_flag)
-						expression_flag = true;
-					expression.append(x.getName());
-				}
-				break;
+					break;
 
 				case SEMICOLON:
-				{
-					if (expression_flag) {
-
-						Node<?> node = new Node<String>(expression.toString(), NodeKind.EXPRESSION);
-						tree.add(node, parent);
-						parent = node;
-						expression_flag = false;
-						expression = new StringBuilder("");
-					}
-					statement_flag = false;
-				}
-				break;
-
+					statement.add(token);
+					Statement stmt = new Statement(statement);
+					Node<Statement> stmt_node = new Node<Statement>(stmt, NodeKind.STATEMENT);
+					function_node.addChild(stmt_node);
+					statement = new ArrayList<Token>();
+					break;
+				
+				case RETURN:
+				case LITERAL_INT:
+					
+				// Assignment operator
+				case ASSIGNMENT_OP:
+					
+				// Binary arithmetic operators
+				case PLUS_OP:
+				case MINUS_OP:
+				case DIVISION_OP:
+				case MULTIPLY_OP:
+				
+				// Logical operators
+				case AND_OP:
+				case OR_OP:
+					
+				// Relational operators
+				case EQUALS_OP:
+				case GREATER_EQUALS_OP:
+				case GREATER_OP:
+				case LESSER_EQUALS_OP:
+				case LESSER_OP:
+				case NOT_EQUALS_OP:
+				
+				// Unary operators
+				case NEGATION:
+					statement.add(token);
+					break;
+				
+				case COMMA:
+				case COMPLEMENT:
+				case EXPRESSION:
+				case IDENTIFIER_FUNCTION:
+				case LOGICAL_NEGATION:
+				case TERM:
+					System.err.println(token.getKind() + " is not supported yet. Exiting.");
+					System.exit(255);
+					break;
+					
 				default:
-				System.err.println("Unidentified token kind " + x.getKind() + " at line " + x.getLineNumber() + ", column " + x.getOffset() + ".");
-				System.exit(255);
+					System.err.println("Unexpected token kind found during parsing. Exiting.");
+					System.exit(255);
+					break;
 			}
 		}
-
-		return tree;
 	}
-
-	public static TokenKind getTokenKind(String token, int line_number, int offset) {
-
-		int index = 0;
-		for (TokenPattern x : Constants.KEYWORDS) {
-
-			Pattern pat = Pattern.compile(x.getName());
-			boolean match = pat.matcher(token).matches();
-			++index;
-			if (match)
-				return x.getKind();
+	
+	public static void parse(Node<?> root) {	
+	
+		if (root == null)
+			return;
+		
+		NodeKind nk = root.getKind();
+		switch (nk) {
+		
+		case PROGRAM:
+		case FUNCTION:
+		{
+			for (Node<?> x : root.getChildren())
+				parse(x);
 		}
-
-		System.err.println("Unidentifiable Token <" + token + "> at line " + line_number + " and column " + offset + ". Exiting.");
-		System.err.println(token);
-		/*for (int i = 1; i < offset; ++i)
-			System.err.print(" ");
-		System.err.println("^"); */
-		System.exit(255);
-		return null;
+		break;
+		
+		case STATEMENT:
+		{
+			Statement stmt = (Statement) root.getData();
+			TokenStream ts = new TokenStream(stmt.getTokens());
+			Grammar grammar = new Grammar(ts, root);
+			grammar.parse();
+		}
+		break;
+		}
 	}
-
-	public static Token makeToken(String str, int id, int line_number, int offset) {
-
-		Token t1 = new Token(str, id, line_number, offset, getTokenKind(str, line_number, offset));
-		// System.out.println("HELLO: " + t1.getKind());
-		return t1;
-	}
-
+	
 	public static List<Token> lexer(String filename) {
 
 		File file = new File(filename);
@@ -587,90 +603,217 @@ public class Main {
 
 		// a boolean flag to check if the the current space, tab, linefeed, or carriage return is part of the string or code
 		boolean string_sequence = false;
+		
+		boolean identifier = false;
 
-		// a boolean flag to denote if we are in the middle of reading a token
-		boolean reading_token = false;
+		// current token
+		Token token = null;
 
-		// backup variable to store previously read token
-		Token prev_token = null;
-
-		try (FileInputStream fis = new FileInputStream(file)) {
-
-			if (fis.available() > 0)
-				current = (char) fis.read();
+		try (FileInputStream fis = new FileInputStream(file)) {				
 
 			while (fis.available() > 0) {
+				
+				current = (char) fis.read();
 
-				// System.out.println("DEBUG: " + current + " " + reading_token);
-
-				if (current == '\n') {
-
-					++line_number;
-					offset = 0;
-				}
-
-				if (!string_sequence && (current == '(' || current == ')')) {
+				if (string_sequence) {
 					
-					if (!reading_token) {
-
-						prev_token = makeToken(Character.toString(current), token_id++, line_number, offset);
-						token_list.add(prev_token);
-					}
+					buffer.append(current);
 					++offset;
-				}
-
-				else if (!string_sequence && (current == ' ' || current == '\t' || current == '\n' || current == '\r' || current == ';')) {
-
-					if (current == '\t')
-						offset += 4;
+					if (fis.available() > 0)
+						current = (char) fis.read();
 					else
-						++offset;
-					if (prev_token != null && prev_token.getKind() == TokenKind.OPEN_PARENTHESIS && current != ';') {
-
-						current = (char) fis.read();
-						continue;
-					}
-
-					reading_token = false;
-
-					if (buffer.length() > 0) {
-						
-						prev_token = makeToken(buffer.toString(), token_id++, line_number, offset);
-						token_list.add(prev_token);
-						buffer = new StringBuilder("");
-						if (current == ';') {
-
-							buffer.append(current);
-							current = (char) fis.read();							
-							continue;
-						}
-					}
-					
-					while ((current == ' ' || current == '\t' || current == '\n' || current == '\r') && (fis.available() > 0)) {
-
-						current = (char) fis.read();
-						++offset;
-						if (current == '\n') {
-
-							++line_number;
-							offset = 0;
-						}
-					}
-
-					if (current != '(')
-						reading_token = true;
+						break;
 					continue;
 				}
+				
+				switch (current) {
+				
+				case '\"':
+				case '#':
+				case '$':
+				case '\'':
+				case ',':
+				case ':':
+				case '@':
+				case '\\':
+				case '`':
 
-				buffer.append(current);
-				++offset;
-				reading_token = true;
-				current = (char) fis.read();
+				case '%':
+				case '&':
+				case '.':
+				case '<':
+				case '=':
+				case '>':
+				case '?':
+				case '[':
+				case ']':
+				case '~':
+					if (!string_sequence) {
+
+						System.err.println("Unexpected character " + current + " at line " + line_number + ", column " + offset + ". Exiting.");
+						System.exit(255);
+					}
+					break;
+
+				case '(':
+				case ')':
+				case '*':
+				case '+':
+				case '-':
+				case '/':
+				case ';':
+				case '!':
+				case '^':
+				case '|':
+					if (buffer.length() > 0) {
+
+						identifier = false;
+						token = CompilerUtils.makeToken(buffer, token_id++, line_number, offset);
+						token_list.add(token);
+						buffer = new StringBuilder("");
+					}
+
+					token = CompilerUtils.makeToken(Character.toString(current), token_id++, line_number, offset);
+					token_list.add(token);
+					++offset;
+					break;
+
+				case '_':
+					if (!identifier && !string_sequence) {
+						
+						System.err.println("Unexpected character " + current + " at line " + line_number + ", column " + offset + ". Exiting.");
+						System.exit(255);
+					}
+					
+					++offset;
+					buffer.append(current);
+					break;
+
+
+				case '{':
+				case '}':
+					if (buffer.length() > 0) {
+
+						identifier = false;
+						token = CompilerUtils.makeToken(buffer, token_id++, line_number, offset);
+						token_list.add(token);
+						buffer = new StringBuilder("");
+					}
+
+					token = CompilerUtils.makeToken(Character.toString(current), token_id++, line_number, offset);
+					token_list.add(token);
+					++offset;
+					program_scope += (current == '{') ? 1 : (-1);
+					break;
+
+				case ' ':
+				case '\t':
+				case '\n':
+				case '\r':
+					if (buffer.length() > 0) {
+
+						identifier = false;
+						token = CompilerUtils.makeToken(buffer, token_id++, line_number, offset);
+						token_list.add(token);
+						buffer = new StringBuilder("");
+					}
+
+					++offset;
+					if (current == '\t')
+						offset += 3;
+
+					else if (current == '\n') {
+
+						offset = 0;
+						++line_number;
+					}
+					
+					else if (current == '\r')
+						offset = 0;
+					
+					break;
+
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':	
+					buffer.append(current);
+					++offset;
+					break;
+				
+				case 'A':
+				case 'B':
+				case 'C':
+				case 'D':
+				case 'E':
+				case 'F':
+				case 'G':
+				case 'H':
+				case 'I':
+				case 'J':
+				case 'K':
+				case 'L':
+				case 'M':
+				case 'N':
+				case 'O':
+				case 'P':
+				case 'Q':
+				case 'R':
+				case 'S':
+				case 'T':
+				case 'U':
+				case 'V':
+				case 'W':
+				case 'X':
+				case 'Y':
+				case 'Z':
+
+				case 'a':
+				case 'b':
+				case 'c':
+				case 'd':
+				case 'e':
+				case 'f':
+				case 'g':
+				case 'h':
+				case 'i':
+				case 'j':
+				case 'k':
+				case 'l':
+				case 'm':
+				case 'n':
+				case 'o':
+				case 'p':
+				case 'q':
+				case 'r':
+				case 's':
+				case 't':
+				case 'u':
+				case 'v':
+				case 'w':
+				case 'x':
+				case 'y':
+				case 'z':
+					identifier = true;
+					++offset;
+					buffer.append(current);
+					break;
+
+				default:
+					if (!string_sequence) {
+
+						System.err.println("Unexpected character " + current + " at line " + line_number + ", column " + offset + ". Exiting.");
+						System.exit(255);
+					}
+					break;
+				}
 			}
-
-			buffer.append(current);
-			current = (char) fis.read();
-			++offset;
 		}
 
 		catch (IOException e) {
@@ -678,15 +821,21 @@ public class Main {
 			e.printStackTrace();
 		}
 
-		if (buffer.length() > 0) {
-
-			prev_token = makeToken(buffer.toString(), token_id++, line_number, offset);
-			token_list.add(prev_token);
-		}
-
 		return token_list;
 	}
 
+	public static AbsSynTree parser(List<Token> token_list, String filename) {
+
+		AbsSynTree tree = new AbsSynTree();
+		Node<Program> root = new Node<Program>(new Program(filename), NodeKind.PROGRAM);
+		tree.add(root, null);
+		
+		addStatements(token_list, root);
+		
+		parse(root);
+		return tree;
+	}
+	
 	public static void init() {}
 
     public static void main(String[] args) {
@@ -695,32 +844,44 @@ public class Main {
     	// System.out.println("Working Directory = " + System.getProperty("user.dir"));
 
         // Lexical Analysis
-    	System.out.println("Starting Lexical Analysis...");
-        String filename = INPUT_DIRECTORY + "test5.drl";
-    	List<Token> token_list = lexer(filename);
-    	System.out.println("List of all tokens: ");
-    	for (Token x : token_list)
-    		System.out.println(x.getKind() + "\t" + x.getName() + ", " + x.getLineNumber() + ", " + x.getOffset());
-    	System.out.println("Lexical analysis complete...!!!\n");
+    	System.out.print("Starting Lexical Analysis... ");
+        String filename = "test1.drl";
+    	List<Token> token_list = lexer(INPUT_DIRECTORY + filename);
+    	System.out.println("Done!!!\n");
+    	System.out.println("##########Tokens List##########");
+    	CompilerUtils.dispListPretty(token_list);
+    	System.out.println("##########Tokens List##########\n");
     	
         // Parsing
-    	System.out.println("Starting Parser...");
+    	System.out.print("Starting Parser... ");
         AbsSynTree ast = parser(token_list, filename);
+        System.out.println("Done!!!\n");
+        System.out.println("##########Syntax Tree##########");
         ast.preorder();
-        System.out.println("Parsing complete...!!!\n");
-
+        System.out.println("##########Syntax Tree##########\n");
+        
         // Intermediate Code Generation
 
+        /*
         // Optimization: Currently expanding the Expression nodes
         System.out.println("Optimizing the Parse Tree...");
         Optimizer.optimize(ast);
-        System.out.println("Complete...!!!\n");
+        System.out.println("Complete...!!!\n");*/
 
         // Code generation : Converting DRLang code to Assembly
-        System.out.println("Writing Assembly Code...");
-        String output_filepath = OUTPUT_DIRECTORY + "test5.s";
-        generate(ast, output_filepath);
-        System.out.println("Assembly generated!!!");
-        System.out.println("Output Location: " + new File(output_filepath).getAbsolutePath() + "\n");
+        System.out.print("Writing Assembly Code... ");
+        String output_filepath = "test1.s";
+        generate(ast, OUTPUT_DIRECTORY + output_filepath);
+        System.out.println("Done!!!\n");
+        System.out.println("##########Generated Code##########");
+        CompilerUtils.printAssembly(OUTPUT_DIRECTORY + output_filepath);
+        System.out.println("##########Generated Code##########\n");
+        
+        System.out.println("Output Location: " + new File(OUTPUT_DIRECTORY + output_filepath).getAbsolutePath() + "\n");
+        
+        if (CompilerUtils.checkSolution(OUTPUT_DIRECTORY, output_filepath) > 0)
+        	System.err.println("Bad assembly generated.");
+        else
+        	System.out.println("Assembly generated correctly.");
     }
 }

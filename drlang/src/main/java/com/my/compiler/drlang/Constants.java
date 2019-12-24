@@ -125,14 +125,25 @@ public class Constants {
 													SEMICOLON,
 													
 													RETURN,
-													
-													IDENTIFIER,
-													IDENTIFIER_FUNCTION,
-													LITERAL_INT,
+
 													PLUS_OP,
 													MINUS_OP,
 													MULTIPLY_OP,
 													DIVISION_OP,
+													ASSIGNMENT_OP,
+
+													AND_OP,
+													OR_OP,
+													EQUALS_OP,
+													NOT_EQUALS_OP,
+													LESSER_OP,
+													GREATER_OP,
+													LESSER_EQUALS_OP,
+													GREATER_EQUALS_OP,
+													
+													IDENTIFIER,
+													IDENTIFIER_FUNCTION,
+													LITERAL_INT,
 													TERM,
 													EXPRESSION,
 													NEGATION,

@@ -18,6 +18,7 @@ public enum TokenKind {
 	MINUS_OP,
 	MULTIPLY_OP,
 	DIVISION_OP,
+	ASSIGNMENT_OP,
 
 	AND_OP,
 	OR_OP,

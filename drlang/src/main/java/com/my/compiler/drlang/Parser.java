@@ -344,7 +344,5 @@ public class Parser {
 	public static void main(String[] args) {
 		
 		Node<?> node = createExpressionTree("20 + 30 --10");
-		if (node != null)
-			node.preorder();
 	}
 }

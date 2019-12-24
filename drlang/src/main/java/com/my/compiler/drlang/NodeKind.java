@@ -8,6 +8,7 @@ public enum NodeKind {
 	// Program level kinds
 	PROGRAM,
 	FUNCTION,
+	STATEMENT,
 
 	// Brackets
 	LEFT_PARENTHESIS,

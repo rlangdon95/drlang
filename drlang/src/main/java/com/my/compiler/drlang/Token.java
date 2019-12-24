@@ -39,6 +39,12 @@ public class Token implements Comparable<Token> {
 	public int getOffset() { return this.offset; }
 
 	public TokenKind getKind() { return this.kind; }
+	
+	@Override
+	public String toString() {
+		
+		return this.name + ", " + this.kind;
+	}
 
 	@Override
 	public int compareTo(Token token) {

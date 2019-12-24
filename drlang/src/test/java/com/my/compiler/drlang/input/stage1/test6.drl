@@ -1,4 +1,5 @@
-bool main() {
+int main() {
 	
-	ret true;
+	int a = 5 + 10;
+	ret 20;
 }
